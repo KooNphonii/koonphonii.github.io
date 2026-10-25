@@ -1,0 +1,81 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Time</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        .container {
+            text-align: center;
+            padding: 2rem;
+            background: #1e293b;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+        #local-clock {
+            font-size: 2.5rem;
+            font-weight: bold;
+            font-family: monospace;
+            color: #34d399;
+            margin-top: 10px;
+        }
+        #timezone-name {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-top: 8px;
+        }
+        p {
+            color: #94a3b8;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <p>Your Local Time</p>
+        <div id="local-clock">Detecting time...</div>
+        <div id="timezone-name"></div>
+    </div>
+
+    <script>
+        function updateLocalTime() {
+            const now = new Date();
+            
+            // By leaving timeZone blank or using undefined, it automatically defaults to the visitor's local system time zone
+            const options = {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true // Set to false if you prefer 24-hour format
+            };
+
+            const formatter = new Intl.DateTimeFormat(undefined, options);
+            document.getElementById('local-clock').innerText = formatter.format(now);
+
+            // Automatically detect and display the visitor's time zone name (e.g., "Africa/Accra" or "America/New_York")
+            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            document.getElementById('timezone-name').innerText = `Time Zone: ${tz}`;
+        }
+
+        // Update every second
+        setInterval(updateLocalTime, 1000);
+        updateLocalTime(); // Initial call
+    </script>
+
+</body>
+</html>
