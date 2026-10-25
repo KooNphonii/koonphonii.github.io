@@ -1,9 +1,9 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Local Time</title>
+    <title>True Internet Time</title>
     <style>
         body {
             font-family: system-ui, -apple-system, sans-serif;
@@ -23,14 +23,14 @@
             border-radius: 12px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
         }
-        #local-clock {
+        #net-clock {
             font-size: 2.5rem;
             font-weight: bold;
             font-family: monospace;
-            color: #34d399;
+            color: #38bdf8;
             margin-top: 10px;
         }
-        #timezone-name {
+        #timezone-label {
             font-size: 0.9rem;
             color: #94a3b8;
             margin-top: 8px;
@@ -44,37 +44,61 @@
 <body>
 
     <div class="container">
-        <p>Your Local Time</p>
-        <div id="local-clock">Detecting time...</div>
-        <div id="timezone-name"></div>
+        <p>True Internet Time (UTC)</p>
+        <div id="net-clock">Fetching from TimeAPI...</div>
+        <div id="timezone-label"></div>
     </div>
 
     <script>
-        function updateLocalTime() {
-            const now = new Date();
-            
-            // By leaving timeZone blank or using undefined, it automatically defaults to the visitor's local system time zone
+        let serverTime = null;
+
+        async function fetchInternetTime() {
+            try {
+                // Fetching current UTC time directly from timeapi.io
+                const response = await fetch('https://timeapi.io/api/Time/current/zone?timeZone=UTC');
+                const data = await response.json();
+                
+                // timeapi.io provides a clean dateTime string
+                serverTime = new Date(data.dateTime).getTime();
+                
+                document.getElementById('timezone-label').innerText = `Time Zone: ${data.timeZone}`;
+            } catch (error) {
+                console.error("Failed to fetch from TimeAPI, falling back to device time", error);
+                serverTime = Date.now();
+                document.getElementById('timezone-label').innerText = "Time Zone: Local (Fallback)";
+            }
+        }
+
+        function updateClock() {
+            if (!serverTime) return;
+
+            // Increment our synced server timestamp by 1 second every tick
+            serverTime += 1000;
+
+            const now = new Date(serverTime);
             const options = {
+                timeZone: 'UTC',
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit',
                 second: '2-digit',
-                hour12: true // Set to false if you prefer 24-hour format
+                hour12: false
             };
 
-            const formatter = new Intl.DateTimeFormat(undefined, options);
-            document.getElementById('local-clock').innerText = formatter.format(now);
-
-            // Automatically detect and display the visitor's time zone name (e.g., "Africa/Accra" or "America/New_York")
-            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            document.getElementById('timezone-name').innerText = `Time Zone: ${tz}`;
+            const formatter = new Intl.DateTimeFormat([], options);
+            document.getElementById('net-clock').innerText = formatter.format(now) + " UTC";
         }
 
-        // Update every second
-        setInterval(updateLocalTime, 1000);
-        updateLocalTime(); // Initial call
+        // 1. Fetch the exact internet time immediately on page load
+        fetchInternetTime();
+
+        // 2. Tick forward locally every second to keep the clock smooth
+        setInterval(updateClock, 1000);
+
+        // 3. Re-sync with timeapi.io every 5 minutes to prevent any clock drift
+        setInterval(fetchInternetTime, 5 * 60 * 1000);
     </script>
 
 </body>
